@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -46,10 +47,9 @@ func TestAddGetDelete(t *testing.T) {
 	// получите только что добавленную посылку, убедитесь в отсутствии ошибки
 	// проверьте, что значения всех полей в полученном объекте совпадают со значениями полей в переменной parcel
 	retrievedParcel, err := store.Get(id)
+
 	require.NoError(t, err)
-	require.Equal(t, parcel.Client, retrievedParcel.Client)
-	require.Equal(t, parcel.Status, retrievedParcel.Status)
-	require.Equal(t, parcel.Address, retrievedParcel.Address)
+	assert.Equal(t, parcel, retrievedParcel)
 	// delete
 	// удалите добавленную посылку, убедитесь в отсутствии ошибки
 	// проверьте, что посылку больше нельзя получить из БД
@@ -58,6 +58,7 @@ func TestAddGetDelete(t *testing.T) {
 
 	_, err = store.Get(id)
 	require.Error(t, err)
+	assert.ErrorIs(t, sql.ErrNoRows, err)
 }
 
 // TestSetAddress проверяет обновление адреса
@@ -82,6 +83,7 @@ func TestSetAddress(t *testing.T) {
 	retrievedParcel, err := store.Get(id)
 	require.NoError(t, err)
 	require.Equal(t, newAddress, retrievedParcel.Address)
+	assert.Equal(t, newAddress, retrievedParcel.Address)
 }
 
 // TestSetStatus проверяет обновление статуса
@@ -108,6 +110,7 @@ func TestSetStatus(t *testing.T) {
 	retrievedParcel, err := store.Get(id)
 	require.NoError(t, err)
 	require.Equal(t, newStatus, retrievedParcel.Status)
+	assert.Equal(t, newStatus, retrievedParcel.Address)
 }
 
 // TestGetByClient проверяет получение посылок по идентификатору клиента
@@ -148,6 +151,7 @@ func TestGetByClient(t *testing.T) {
 	storedParcels, err := store.GetByClient(client)
 	require.NoError(t, err)
 	require.Len(t, storedParcels, len(parcels)) // получите список посылок по идентификатору клиента, сохранённого в переменной client
+	assert.Len(t, parcels, len(storedParcels))
 	// убедитесь в отсутствии ошибки
 	// убедитесь, что количество полученных посылок совпадает с количеством добавленных
 
@@ -156,9 +160,8 @@ func TestGetByClient(t *testing.T) {
 		// в parcelMap лежат добавленные посылки, ключ - идентификатор посылки, значение - сама посылка
 		// убедитесь, что все посылки из storedParcels есть в parcelMap
 		// убедитесь, что значения полей полученных посылок заполнены верно
-		expectedParcel := parcels[parcel.Number-1]
-		require.Equal(t, expectedParcel.Client, parcel.Client)
-		require.Equal(t, expectedParcel.Status, parcel.Status)
-		require.Equal(t, expectedParcel.Address, parcel.Address)
+		expectedParcel, is := parcelMap[parcel.Number]
+		require.True(t, is)
+		assert.Equal(t, expectedParcel, parcel)
 	}
 }

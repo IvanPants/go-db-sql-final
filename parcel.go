@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"errors"
-	"time"
 )
 
 type ParcelStore struct {
@@ -20,7 +19,7 @@ func (s ParcelStore) Add(p Parcel) (int, error) {
 	// верните идентификатор последней добавленной записи
 
 	query := `INSERT INTO parcel (client, status, address, created_at) VALUES (?, ?, ?, ?)`
-	result, err := s.db.Exec(query, p.Client, p.Status, p.Address, time.Now().Format(time.RFC3339))
+	result, err := s.db.Exec(query, p.Client, p.Status, p.Address, p.CreatedAt)
 	if err != nil {
 		return 0, err
 	}
@@ -66,6 +65,9 @@ func (s ParcelStore) GetByClient(client int) ([]Parcel, error) {
 			return nil, err
 		}
 		parcels = append(parcels, p)
+		if err := rows.Err(); err != nil {
+			return nil, err
+		}
 	}
 	return parcels, nil
 }
@@ -83,7 +85,7 @@ func (s ParcelStore) SetAddress(number int, address string) error {
 	// менять адрес можно только если значение статуса registered
 
 	query := `UPDATE parcel SET address = ? WHERE number = ? AND status = ?`
-	result, err := s.db.Exec(query, address, number, "registered")
+	result, err := s.db.Exec(query, address, number, ParcelStatusRegistered)
 	if err != nil {
 		return err
 	}
@@ -102,16 +104,10 @@ func (s ParcelStore) Delete(number int) error {
 	// удалять строку можно только если значение статуса registered
 
 	query := `DELETE FROM parcel WHERE number = ? AND status = ?`
-	result, err := s.db.Exec(query, number, "registered")
+	_, err := s.db.Exec(query, number, ParcelStatusRegistered)
 	if err != nil {
 		return err
 	}
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rowsAffected == 0 {
-		return errors.New("parcel can only be deleted if it is registered")
-	}
+
 	return nil
 }
