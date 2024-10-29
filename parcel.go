@@ -65,9 +65,9 @@ func (s ParcelStore) GetByClient(client int) ([]Parcel, error) {
 			return nil, err
 		}
 		parcels = append(parcels, p)
-		if err := rows.Err(); err != nil {
-			return nil, err
-		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return parcels, nil
 }
